@@ -1,0 +1,41 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // .tool_response.filePath'); case \"$f\" in *.java) svc_dir=\"${f%/src/*}\"; if [ -f \"$svc_dir/gradlew\" ]; then (cd \"$svc_dir\" && ./gradlew spotlessApply -PspotlessIdeHook=\"$f\" --console=plain -q); fi ;; esac 2>/dev/null || true",
+            "timeout": 60,
+            "statusMessage": "Formatting with Spotless..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in */config-repo/*|*/application*.yml|*/application*.yaml|*/application*.properties|*.env|*.env.*|*[Ss]ecret*|*[Cc]redentials*) jq -n --arg reason \"설정/민감 정보 파일 수정 - 확인이 필요합니다: $f\" '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"ask\",permissionDecisionReason:$reason}}' ;; esac",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "services=$(git diff --cached --name-only | grep -oE '^(order-service|product-service|api-gateway|discovery-service|config-service)' | sort -u); fail=\"\"; for svc in $services; do if [ -f \"$svc/gradlew\" ]; then (cd \"$svc\" && ./gradlew test --console=plain -q) || fail=\"$fail $svc\"; fi; done; if [ -n \"$fail\" ]; then jq -n --arg reason \"빌드/테스트 실패:$fail — 문제를 수정한 뒤 다시 커밋하세요\" '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:$reason}}'; fi",
+            "timeout": 300,
+            "statusMessage": "Running build/test before commit..."
+          }
+        ]
+      }
+    ]
+  }
+}
