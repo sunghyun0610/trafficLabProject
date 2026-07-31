@@ -64,3 +64,20 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
+## 프로젝트 개요
+
+**공연 예매 플랫폼** — Spring(Boot) + React. 공연(Performance) 도메인 필요.
+
+궁극적인 목표는 **대규모 트래픽을 처리하는 예매 플로우** 구축이며, 다음 단계로 설계한다:
+
+1. **대기열** — Redis Sorted Set으로 구현.
+2. **대기 순번 확인** — 프론트엔드는 폴링(polling)으로 현재 대기 순번을 조회.
+3. **입장 스케줄러** — 현재 임계 TPS를 고려해 대기열에서 사용자를 순차 입장시킴. Spring `@Scheduled`(고정 주기) + **ShedLock**(Redis 기반 분산 락)을 사용한다. 서버가 스케일아웃돼도 인스턴스 간 중복 실행을 막기 위해 Redis 락으로 단일 실행을 보장하며, Quartz처럼 DB(JobStore)에 의존하는 방식은 사용하지 않는다.
+4. **좌석 선점** — Redis 원자적 연산(Lua Script)으로 동시성 제어 보장.
+5. **예매 확정 처리** — DB에 즉시 쓰지 않고 메시지 큐(MQ)로 요청을 한 번 분산.
+6. **최종 커밋** — MQ를 거친 요청을 최종적으로 DB 트랜잭션으로 커밋.
+
+이 플로우와 관련된 작업(대기열, 좌석 선점, 예매 확정 등)을 할 때는 위 순서와 각 단계의 기술 선택(Redis Sorted Set, Lua Script, MQ 분산 처리)을 전제로 설계/구현한다.
