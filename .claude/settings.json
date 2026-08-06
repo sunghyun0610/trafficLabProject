@@ -1,5 +1,19 @@
 {
+  "permissions": {
+    "defaultMode": "plan"
+  },
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat >> .claude/prompt-log.jsonl"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
@@ -9,6 +23,15 @@
             "command": "f=$(jq -r '.tool_input.file_path // .tool_response.filePath'); case \"$f\" in *.java) svc_dir=\"${f%/src/*}\"; if [ -f \"$svc_dir/gradlew\" ]; then (cd \"$svc_dir\" && ./gradlew spotlessApply -PspotlessIdeHook=\"$f\" --console=plain -q); fi ;; esac 2>/dev/null || true",
             "timeout": 60,
             "statusMessage": "Formatting with Spotless..."
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c '{ts: now, tool: .tool_name, input: .tool_input}' >> .claude/tool-log.jsonl"
           }
         ]
       }

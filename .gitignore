@@ -37,3 +37,6 @@ out/
 .vscode/
 
 .env
+
+.claude/prompt-log.jsonl
+.claude/tool-log.jsonl
