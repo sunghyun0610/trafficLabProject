@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 public class Performance {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.AUTO)
   @Column(name = "performance_id")
   private Long id;
 
@@ -26,20 +26,21 @@ public class Performance {
   private String title;
 
   @Column(nullable = false)
-  private String venue;
-
-  @Column(nullable = false)
   private LocalDateTime performedAt;
 
   @Column(nullable = false)
-  private int price;
+  private int price;// 가격은 모두 통일
 
   @Column(nullable = false)
   private int totalSeats;
 
   @Column(nullable = false)
-  private LocalDateTime bookingOpenAt;
+  private LocalDateTime bookingOpenAt;//예약 오픈시점
 
   @Column(nullable = false)
-  private LocalDateTime bookingCloseAt;
+  private LocalDateTime bookingCloseAt;//예약 마감시점
+
+  private String image;
+
+  private String description;
 }
