@@ -14,9 +14,10 @@ public record PerformanceResponse(
     int totalSeats,
     LocalDateTime bookingOpenAt,
     LocalDateTime bookingCloseAt,
-    String thumbnailImage) {
+    String thumbnailImage
+) {
 
-    public static PerformanceResponse from(Performance performance){
+    public static PerformanceResponse from(Performance performance, String thumbnailImage){
         return new PerformanceResponse(
                 performance.getId(),
                 performance.getTitle(),
@@ -25,7 +26,7 @@ public record PerformanceResponse(
                 performance.getTotalSeats(),
                 performance.getBookingOpenAt(),
                 performance.getBookingCloseAt(),
-                performance.getImage()
+                thumbnailImage
         );
     }
 }

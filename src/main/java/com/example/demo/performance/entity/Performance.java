@@ -40,7 +40,6 @@ public class Performance {
   @Column(nullable = false)
   private LocalDateTime bookingCloseAt;//예약 마감시점
 
-  private String image;
 
   private String description;
 }
