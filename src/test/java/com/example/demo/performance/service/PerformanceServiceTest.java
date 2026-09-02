@@ -1,6 +1,7 @@
 package com.example.demo.performance.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -8,13 +9,18 @@ import com.example.demo.common.dto.Cursor;
 import com.example.demo.common.dto.CursorResult;
 import com.example.demo.image.entity.PerformanceImageEntity;
 import com.example.demo.image.repository.PerformanceImageRepository;
+import com.example.demo.performance.dto.PerformanceCreateRequest;
+import com.example.demo.performance.dto.PerformanceDetailResponse;
 import com.example.demo.performance.dto.PerformanceResponse;
 import com.example.demo.performance.entity.Performance;
+import com.example.demo.performance.exception.PerformanceNotFoundException;
 import com.example.demo.performance.repository.PerformanceRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -60,6 +66,58 @@ class PerformanceServiceTest {
     assertThat(result.content()).isEmpty();
     assertThat(result.nextCursor()).isNull();
     verifyNoInteractions(performanceImageRepository);
+  }
+
+  @Test
+  void getPerformanceDetail_returnsResponseWithImages_whenPerformanceExists() {
+    Performance performance = createPerformance(1L, "공연1");
+    given(performanceRepository.findPerformanceById(1L)).willReturn(Optional.of(performance));
+    given(performanceImageRepository.findByPerformanceId(1L))
+        .willReturn(
+            List.of(
+                new PerformanceImageEntity(performance, "img1.jpg", false),
+                new PerformanceImageEntity(performance, "img2.jpg", false)));
+
+    PerformanceDetailResponse result = performanceService.getPerformanceDetail(1L);
+
+    assertThat(result.title()).isEqualTo("공연1");
+    assertThat(result.images()).containsExactly("img1.jpg", "img2.jpg");
+  }
+
+  @Test
+  void getPerformanceDetail_throwsNotFound_whenPerformanceMissing() {
+    given(performanceRepository.findPerformanceById(99L)).willReturn(Optional.empty());
+
+    assertThatThrownBy(() -> performanceService.getPerformanceDetail(99L))
+        .isInstanceOf(PerformanceNotFoundException.class)
+        .hasMessageContaining("99");
+
+    verifyNoInteractions(performanceImageRepository);
+  }
+
+  @Test
+  void registerPerformance_savesMappedEntity_andReturnsGeneratedId() {
+    LocalDateTime now = LocalDateTime.now();
+    PerformanceCreateRequest request =
+        PerformanceCreateRequest.builder()
+            .title("공연1")
+            .performedAt(now.plusDays(10))
+            .price(10000)
+            .totalSeats(100)
+            .bookingOpenAt(now.plusDays(1))
+            .bookingCloseAt(now.plusDays(9))
+            .build();
+    Performance saved = createPerformance(7L, "공연1");
+    ArgumentCaptor<Performance> captor = ArgumentCaptor.forClass(Performance.class);
+    given(performanceRepository.save(captor.capture())).willReturn(saved);
+
+    Long id = performanceService.registerPerformance(request);
+
+    assertThat(id).isEqualTo(7L);
+    Performance mapped = captor.getValue();
+    assertThat(mapped.getTitle()).isEqualTo("공연1");
+    assertThat(mapped.getPrice()).isEqualTo(10000);
+    assertThat(mapped.getTotalSeats()).isEqualTo(100);
   }
 
   private Performance createPerformance(Long id, String title) {
