@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PerformanceImageRepository extends JpaRepository<PerformanceImageEntity, Long> {
   List<PerformanceImageEntity> findByPerformanceIdIn(List<Long> performanceIds);
-  List<PerformanceImageEntity> findByPerformanceIdInAndThumbnailTrue(List<Long> performanceIds);
-  List<PerformanceImageEntity> findByPerformanceId(Long performanceId);//상세조회
+
+  List<PerformanceImageEntity> findByPerformanceIdInAndIsThumbnailTrue(List<Long> performanceIds);
+
+  List<PerformanceImageEntity> findByPerformanceId(Long performanceId); // 상세조회
 }

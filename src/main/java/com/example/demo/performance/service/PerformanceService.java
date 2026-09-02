@@ -71,7 +71,7 @@ public class PerformanceService {
     else {
       List<Long> performanceIds = performanceList.stream().map(Performance::getId).toList();
       return performanceImageRepository
-          .findByPerformanceIdInAndThumbnailTrue(performanceIds)
+          .findByPerformanceIdInAndIsThumbnailTrue(performanceIds)
           .stream()
           .collect(
               Collectors.toMap(
