@@ -4,9 +4,11 @@ import com.example.demo.common.dto.Cursor;
 import com.example.demo.common.dto.CursorResult;
 import com.example.demo.image.entity.PerformanceImageEntity;
 import com.example.demo.image.repository.PerformanceImageRepository;
+import com.example.demo.performance.dto.PerformanceCreateRequest;
 import com.example.demo.performance.dto.PerformanceDetailResponse;
 import com.example.demo.performance.dto.PerformanceResponse;
 import com.example.demo.performance.entity.Performance;
+import com.example.demo.performance.exception.PerformanceNotFoundException;
 import com.example.demo.performance.repository.PerformanceRepository;
 import java.util.List;
 import java.util.Map;
@@ -47,12 +49,21 @@ public class PerformanceService {
 
   public PerformanceDetailResponse getPerformanceDetail(Long performanceId) {
     // performance랑 이미지 다 가져와야함
-    Performance performance = performanceRepository.findPerformanceById(performanceId);
+    Performance performance =
+        performanceRepository
+            .findPerformanceById(performanceId)
+            .orElseThrow(() -> new PerformanceNotFoundException(performanceId));
     // 이미지도 가져와야지
     List<PerformanceImageEntity> imageList =
         performanceImageRepository.findByPerformanceId(performanceId);
     List<String> imageUrlList = imageList.stream().map(image -> image.getImageUrl()).toList();
     return PerformanceDetailResponse.from(performance, imageUrlList);
+  }
+
+  @Transactional
+  public Long registerPerformance(PerformanceCreateRequest request) {
+    Performance performance = request.toEntity();
+    return performanceRepository.save(performance).getId();
   }
 
   private Map<Long, String> findThumbnails(List<Performance> performanceList) {
